@@ -2515,7 +2515,23 @@ pub fn rustdesk_interval(i: Interval) -> ThrottledInterval {
     ThrottledInterval::new(i)
 }
 
+/// Halkom Remote: ime programa i Halkom server ugrađeni pri buildu.
+/// Adresa i javni ključ servera dolaze iz promenljivih HALKOM_SERVER i HALKOM_KEY
+/// (GitHub Actions → repo Variables), pa nisu zapisani u kodu.
+fn apply_halkom_branding() {
+    *config::APP_NAME.write().unwrap() = "Halkom Remote".to_owned();
+    let mut settings = config::OVERWRITE_SETTINGS.write().unwrap();
+    if let Some(host) = option_env!("HALKOM_SERVER").filter(|s| !s.is_empty()) {
+        settings.insert("custom-rendezvous-server".to_owned(), host.to_owned());
+        settings.insert("relay-server".to_owned(), host.to_owned());
+    }
+    if let Some(key) = option_env!("HALKOM_KEY").filter(|s| !s.is_empty()) {
+        settings.insert("key".to_owned(), key.to_owned());
+    }
+}
+
 pub fn load_custom_client() {
+    apply_halkom_branding();
     #[cfg(debug_assertions)]
     if let Ok(data) = std::fs::read_to_string("./custom.txt") {
         read_custom_client(data.trim());
